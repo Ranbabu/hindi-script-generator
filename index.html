@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hindi AI Script Generator</title>
+
+<style>
+body{font-family:system-ui;max-width:600px;margin:auto;padding:16px}
+textarea,button{width:100%;padding:14px;margin-top:12px;border-radius:10px}
+button{border:2px solid #2563eb;background:transparent;color:#2563eb}
+button:active{background:#2563eb;color:#fff;transform:scale(.97)}
+#out{white-space:pre-wrap;margin-top:16px;background:#f1f5f9;padding:14px;border-radius:10px}
+</style>
+</head>
+
+<body>
+
+<h2>🧠 हिंदी AI स्क्रिप्ट जनरेटर</h2>
+<textarea id="topic" placeholder="स्टोरी का topic लिखें"></textarea>
+<button onclick="go()">स्क्रिप्ट बनाएं</button>
+<div id="out">यहाँ output आएगा…</div>
+
+<script>
+const API_URL = "https://script-generate-api.username.workers.dev";
+
+async function go(){
+  const t=document.getElementById("topic").value;
+  if(!t) return alert("Topic लिखें");
+  out.innerText="⏳ Script बन रही है…";
+
+  const r=await fetch(API_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      messages:[{
+        role:"user",
+        content:`"${t}" पर 5–10 मिनट की पूरी हिंदी स्क्रिप्ट लिखें`
+      }]
+    })
+  });
+
+  const d=await r.json();
+  out.innerText=d.choices[0].message.content;
+}
+</script>
+
+</body>
+</html>
