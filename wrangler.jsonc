@@ -1,0 +1,5 @@
+{
+  "name": "hindi-script-generator",
+  "main": "worker.js",
+  "compatibility_date": "2026-01-16"
+}
