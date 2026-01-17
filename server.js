@@ -19,11 +19,31 @@ app.post("/generate", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        inputs: `हिंदी में पूरी कहानी की स्क्रिप्ट लिखो:\n${prompt}`
+        inputs: `हिंदी में 2 मिनट की कहानी की स्क्रिप्ट लिखो:\n${prompt}`
       })
     });
 
-    const data = await response.json();
+    // 🔴 SAFE TEXT READ (NOT JSON DIRECTLY)
+    const text = await response.text();
+
+    // अगर Hugging Face error दे
+    if (!response.ok) {
+      return res.status(500).json({
+        error: text
+      });
+    }
+
+    // अब safely JSON parse करें
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      return res.status(500).json({
+        error: "Invalid JSON from HuggingFace",
+        raw: text
+      });
+    }
+
     res.json(data);
 
   } catch (err) {
