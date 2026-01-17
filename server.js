@@ -5,6 +5,19 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
+// --- Permission Code (CORS) Start ---
+// यह कोड GitHub Pages को सर्वर से बात करने की इजाजत देता है
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*"); // यहाँ '*' का मतलब कोई भी वेबसाइट इसे इस्तेमाल कर सकती है
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
+// --- Permission Code End ---
+
 const HF_API = "https://router.huggingface.co/v1/chat/completions";
 
 app.post("/generate", async (req, res) => {
@@ -15,12 +28,15 @@ app.post("/generate", async (req, res) => {
       return res.status(400).json({ error: "Prompt required" });
     }
 
-    // बेहतर prompt फॉर्मेट हिंदी कहानी के लिए
     const fullPrompt = `तुम एक बेहतरीन हिंदी कहानीकार हो। 
-नीचे दिया आइडिया लेकर ठीक 2 मिनट में पढ़ी जा सकने वाली छोटी, रोचक, मजेदार और पूरी हिंदी कहानी लिखो (250-400 शब्द)। 
-कहानी में अच्छी शुरुआत, रोमांचक बीच और संतोषजनक अंत हो। 
-भाषा सरल, बोलचाल वाली और आकर्षक रखो। 
-कहानी: ${prompt}`;
+नीचे दिए गए विषय पर एक 2 मिनट में पढ़ी जाने वाली (लगभग 300-400 शब्द) रोचक हिंदी कहानी लिखो।
+ध्यान दें:
+1. कहानी में ** या ## या * जैसे किसी भी फॉर्मेटिंग का इस्तेमाल मत करना।
+2. पैराग्राफ सादे टेक्स्ट में होने चाहिए।
+3. कहानी की भाषा सरल और दिल को छू लेने वाली हो।
+4. कहानी पूरी हो।
+
+विषय: ${prompt}`;
 
     const response = await fetch(HF_API, {
       method: "POST",
@@ -29,15 +45,10 @@ app.post("/generate", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "HuggingFaceTB/SmolLM3-3B", // फ्री मॉडल
-        messages: [
-          {
-            role: "user",
-            content: fullPrompt
-          }
-        ],
-        max_tokens: 600,
-        temperature: 0.8,
+        model: "Qwen/Qwen2.5-72B-Instruct",
+        messages: [{ role: "user", content: fullPrompt }],
+        max_tokens: 1000,
+        temperature: 0.7,
         top_p: 0.9,
         stream: false
       })
@@ -45,22 +56,17 @@ app.post("/generate", async (req, res) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("HF Error:", response.status, errorText);
       throw new Error(`HF API failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    let generated = data.choices?.[0]?.message?.content?.trim() || "कहानी जनरेट नहीं हो पाई।";
 
-    let generated = data.choices?.[0]?.message?.content?.trim() || "कोई आउटपुट नहीं मिला।";
+    // सफाई अभियान
+    generated = generated.replace(/<think>[\s\S]*?<\/think>/g, "");
+    generated = generated.replace(/\*\*/g, "").replace(/##/g, "").replace(/\*/g, "").trim();
 
-    // --- यहाँ सुधार किया गया है (Fix added here) ---
-    // यह लाइन <think> और </think> के बीच के सारे टेक्स्ट को हटा देगी
-    generated = generated.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-    // ---------------------------------------------
-
-    res.json({
-      generated_text: generated
-    });
+    res.json({ generated_text: generated });
 
   } catch (err) {
     console.error("Server Error:", err);
