@@ -29,7 +29,7 @@ app.post("/generate", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "google/gemma-2b-it",  // या google/gemma-2-2b-it अगर ये काम करे
+        model: "HuggingFaceTB/SmolLM3-3B",  // फ्री मॉडल ऐड किया: SmolLM3-3B, जो HF router पर फ्री में काम करता है (Gemma-2B-it की जगह)
         messages: [
           {
             role: "user",
