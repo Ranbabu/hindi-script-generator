@@ -29,7 +29,7 @@ app.post("/generate", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "HuggingFaceTB/SmolLM3-3B",  // फ्री मॉडल ऐड किया: SmolLM3-3B, जो HF router पर फ्री में काम करता है (Gemma-2B-it की जगह)
+        model: "HuggingFaceTB/SmolLM3-3B", // फ्री मॉडल
         messages: [
           {
             role: "user",
@@ -51,7 +51,12 @@ app.post("/generate", async (req, res) => {
 
     const data = await response.json();
 
-    const generated = data.choices?.[0]?.message?.content?.trim() || "कोई आउटपुट नहीं मिला। Token चेक करो या model access दोबारा accept करो।";
+    let generated = data.choices?.[0]?.message?.content?.trim() || "कोई आउटपुट नहीं मिला।";
+
+    // --- यहाँ सुधार किया गया है (Fix added here) ---
+    // यह लाइन <think> और </think> के बीच के सारे टेक्स्ट को हटा देगी
+    generated = generated.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+    // ---------------------------------------------
 
     res.json({
       generated_text: generated
