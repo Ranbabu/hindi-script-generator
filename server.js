@@ -5,8 +5,7 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-const HF_API =
-  "https://router.huggingface.co/hf-inference/models/google/gemma-2b-it";
+const HF_API = "https://router.huggingface.co/v1/chat/completions";
 
 app.post("/generate", async (req, res) => {
   try {
@@ -19,32 +18,23 @@ app.post("/generate", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        inputs: `हिंदी में 2 मिनट की कहानी की स्क्रिप्ट लिखो:\n${prompt}`
+        model: "google/gemma-2b-it",
+        messages: [
+          {
+            role: "user",
+            content: `हिंदी में 2 मिनट की कहानी की स्क्रिप्ट लिखो:\n${prompt}`
+          }
+        ],
+        max_tokens: 500
       })
     });
 
-    // 🔴 SAFE TEXT READ (NOT JSON DIRECTLY)
-    const text = await response.text();
+    const data = await response.json();
 
-    // अगर Hugging Face error दे
-    if (!response.ok) {
-      return res.status(500).json({
-        error: text
-      });
-    }
-
-    // अब safely JSON parse करें
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      return res.status(500).json({
-        error: "Invalid JSON from HuggingFace",
-        raw: text
-      });
-    }
-
-    res.json(data);
+    // clean response for frontend
+    res.json({
+      generated_text: data.choices?.[0]?.message?.content || "No output"
+    });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
