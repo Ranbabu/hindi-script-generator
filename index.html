@@ -3,47 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hindi AI Script Generator</title>
+<title>Hindi Script Generator</title>
 
 <style>
-body{font-family:system-ui;max-width:600px;margin:auto;padding:16px}
-textarea,button{width:100%;padding:14px;margin-top:12px;border-radius:10px}
-button{border:2px solid #2563eb;background:transparent;color:#2563eb}
-button:active{background:#2563eb;color:#fff;transform:scale(.97)}
-#out{white-space:pre-wrap;margin-top:16px;background:#f1f5f9;padding:14px;border-radius:10px}
+body{
+  background:#020617;
+  color:white;
+  font-family:Arial;
+}
+.container{
+  max-width:600px;
+  margin:auto;
+  padding:20px;
+}
+textarea{
+  width:100%;
+  height:120px;
+  background:#000;
+  color:#fff;
+  border:2px solid #38bdf8;
+  border-radius:10px;
+  padding:10px;
+}
+button{
+  width:100%;
+  padding:14px;
+  margin-top:15px;
+  background:transparent;
+  border:2px solid #38bdf8;
+  color:#38bdf8;
+  font-size:18px;
+  border-radius:12px;
+}
+button:active{
+  transform:scale(0.95);
+  background:#38bdf8;
+  color:#000;
+}
+.output{
+  margin-top:20px;
+  background:#000;
+  padding:15px;
+  border-radius:10px;
+  min-height:150px;
+  white-space:pre-wrap;
+}
 </style>
 </head>
 
 <body>
+<div class="container">
+<h2>Hindi Script Generator</h2>
 
-<h2>🧠 हिंदी AI स्क्रिप्ट जनरेटर</h2>
-<textarea id="topic" placeholder="स्टोरी का topic लिखें"></textarea>
-<button onclick="go()">स्क्रिप्ट बनाएं</button>
-<div id="out">यहाँ output आएगा…</div>
+<textarea id="prompt" placeholder="Topic लिखें"></textarea>
+<button onclick="generate()">Generate</button>
+
+<div class="output" id="result">Ready...</div>
+</div>
 
 <script>
-const API_URL = "https://script-generate-api.username.workers.dev";
+async function generate(){
+  const prompt = document.getElementById("prompt").value;
+  const result = document.getElementById("result");
 
-async function go(){
-  const t=document.getElementById("topic").value;
-  if(!t) return alert("Topic लिखें");
-  out.innerText="⏳ Script बन रही है…";
+  result.innerText = "Generating...";
 
-  const r=await fetch(API_URL,{
+  const res = await fetch("/generate", {
     method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      messages:[{
-        role:"user",
-        content:`"${t}" पर 5–10 मिनट की पूरी हिंदी स्क्रिप्ट लिखें`
-      }]
-    })
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ prompt })
   });
 
-  const d=await r.json();
-  out.innerText=d.choices[0].message.content;
+  const data = await res.json();
+  result.innerText =
+    data[0]?.generated_text || JSON.stringify(data);
 }
 </script>
-
 </body>
 </html>
