@@ -11,6 +11,17 @@ app.post("/generate", async (req, res) => {
   try {
     const { prompt } = req.body;
 
+    if (!prompt) {
+      return res.status(400).json({ error: "Prompt required" });
+    }
+
+    // बेहतर prompt फॉर्मेट हिंदी कहानी के लिए
+    const fullPrompt = `तुम एक बेहतरीन हिंदी कहानीकार हो। 
+नीचे दिया आइडिया लेकर ठीक 2 मिनट में पढ़ी जा सकने वाली छोटी, रोचक, मजेदार और पूरी हिंदी कहानी लिखो (250-400 शब्द)। 
+कहानी में अच्छी शुरुआत, रोमांचक बीच और संतोषजनक अंत हो। 
+भाषा सरल, बोलचाल वाली और आकर्षक रखो। 
+कहानी: ${prompt}`;
+
     const response = await fetch(HF_API, {
       method: "POST",
       headers: {
@@ -18,30 +29,41 @@ app.post("/generate", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "google/gemma-2b-it",
+        model: "google/gemma-2b-it",  // या google/gemma-2-2b-it अगर ये काम करे
         messages: [
           {
             role: "user",
-            content: `हिंदी में 2 मिनट की कहानी की स्क्रिप्ट लिखो:\n${prompt}`
+            content: fullPrompt
           }
         ],
-        max_tokens: 500
+        max_tokens: 600,
+        temperature: 0.8,
+        top_p: 0.9,
+        stream: false
       })
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("HF Error:", response.status, errorText);
+      throw new Error(`HF API failed: ${response.status} - ${errorText}`);
+    }
+
     const data = await response.json();
 
-    // clean response for frontend
+    const generated = data.choices?.[0]?.message?.content?.trim() || "कोई आउटपुट नहीं मिला। Token चेक करो या model access दोबारा accept करो।";
+
     res.json({
-      generated_text: data.choices?.[0]?.message?.content || "No output"
+      generated_text: generated
     });
 
   } catch (err) {
+    console.error("Server Error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log(`Server running on port ${PORT}`);
 });
