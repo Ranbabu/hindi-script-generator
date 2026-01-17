@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hindi Script Generator</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #e2e8f0;
+            --accent: #3b82f6;
+            --success: #22c55e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
+        .container { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 20px; }
+        h1 { text-align: center; margin-bottom: 10px; font-size: 1.8rem; color: #fff; }
+        textarea { width: 100%; height: 120px; background-color: var(--card-bg); border: 1px solid #334155; border-radius: 12px; padding: 15px; color: #fff; font-size: 16px; resize: none; outline: none; }
+        textarea:focus { border-color: var(--accent); }
+        button#generateBtn { width: 100%; padding: 15px; background-color: var(--accent); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        button#generateBtn:disabled { background-color: #475569; }
+        .result-container { display: none; background-color: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid #334155; position: relative; margin-top: 20px; }
+        .story-text { white-space: pre-wrap; line-height: 1.6; font-size: 16px; color: #cbd5e1; margin-bottom: 50px; }
+        .copy-btn { position: absolute; bottom: 15px; right: 15px; background-color: #334155; color: white; border: 1px solid #475569; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .copy-btn.copied { background-color: var(--success); color: #000; }
+        .loader { display: none; text-align: center; margin-top: 10px; color: var(--accent); }
+        .error-msg { color: #ef4444; text-align: center; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Hindi Script Generator</h1>
+        <textarea id="promptInput" placeholder="कहानी का टॉपिक यहाँ लिखें..."></textarea>
+        <button id="generateBtn" onclick="generateScript()">Generate Story</button>
+        <div class="loader" id="loader">कहानी लिखी जा रही है...</div>
+        <div class="error-msg" id="errorMsg"></div>
+
+        <div class="result-container" id="resultContainer">
+            <div class="story-text" id="storyOutput"></div>
+            <button class="copy-btn" id="copyBtn" onclick="copyText()">📋 Copy Script</button>
+        </div>
+    </div>
+
+    <script>
+        // यह लिंक आपके Render सर्वर से कनेक्ट करेगा
+        const API_URL = "https://hindi-script-generator.onrender.com/generate";
+
+        async function generateScript() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            const btn = document.getElementById('generateBtn');
+            const loader = document.getElementById('loader');
+            const resultContainer = document.getElementById('resultContainer');
+            const storyOutput = document.getElementById('storyOutput');
+            const errorMsg = document.getElementById('errorMsg');
+
+            errorMsg.style.display = 'none';
+            resultContainer.style.display = 'none';
+            
+            if (!prompt) { alert("कृपया टॉपिक लिखें!"); return; }
+
+            btn.disabled = true;
+            btn.innerText = "Generating...";
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                if (!response.ok) throw new Error("Network Error");
+                const data = await response.json();
+
+                if (data.generated_text) {
+                    storyOutput.innerText = data.generated_text;
+                    resultContainer.style.display = 'block';
+                } else {
+                    throw new Error("Empty response");
+                }
+            } catch (error) {
+                errorMsg.innerText = "कहानी जनरेट नहीं हो पाई। Render सर्वर सो रहा होगा, 1 मिनट बाद दोबारा कोशिश करें।";
+                errorMsg.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Generate Story";
+                loader.style.display = 'none';
+            }
+        }
+
+        function copyText() {
+            const text = document.getElementById('storyOutput').innerText;
+            const copyBtn = document.getElementById('copyBtn');
+            navigator.clipboard.writeText(text).then(() => {
+                copyBtn.classList.add('copied');
+                copyBtn.innerText = "✅ Copied!";
+                setTimeout(() => {
+                    copyBtn.classList.remove('copied');
+                    copyBtn.innerText = "📋 Copy Script";
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
