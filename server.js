@@ -14,10 +14,6 @@ const HF_API =
 app.post("/generate", async (req, res) => {
   const { prompt } = req.body;
 
-  if (!prompt) {
-    return res.json({ error: "Prompt missing" });
-  }
-
   try {
     const response = await fetch(HF_API, {
       method: "POST",
@@ -38,6 +34,6 @@ app.post("/generate", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log("Server running on port " + PORT)
-);
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
